@@ -1,0 +1,908 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TLSM Trauma Bay OSCE Game (C-ABCDE + AT-MIST + AMPLE)</title>
+  <style>
+    :root{
+      --bg:#0b1220; --card:#121a2b; --card2:#0f1730; --line:rgba(255,255,255,.10);
+      --text:#eaf0ff; --muted:#9fb0d0;
+      --good:#2ecc71; --bad:#ff5c7a; --warn:#f1c40f; --blue:#4aa3ff;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(180deg,#070b14,#0b1220);color:var(--text)}
+    header{padding:16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(7,11,20,.9);backdrop-filter:blur(10px);z-index:5}
+    h1{margin:0;font-size:18px}
+    .sub{margin:6px 0 0;color:var(--muted);font-size:13px;line-height:1.35}
+    main{max-width:1080px;margin:0 auto;padding:16px;display:grid;gap:14px}
+    .grid{display:grid;grid-template-columns:1.2fr .8fr;gap:14px}
+    @media (max-width:980px){.grid{grid-template-columns:1fr}}
+    .card{background:rgba(18,26,43,.92);border:1px solid var(--line);border-radius:16px;padding:14px}
+    .cardTitle{font-weight:900;font-size:16px;margin:0 0 6px}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .pill{font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.12);color:var(--muted)}
+    .pill b{color:var(--text)}
+    .hr{height:1px;background:var(--line);margin:12px 0}
+    .btn{
+      cursor:pointer;border:1px solid rgba(255,255,255,.14);
+      background:var(--card2);color:var(--text);padding:10px 12px;border-radius:12px;font-weight:700
+    }
+    .btn:hover{filter:brightness(1.08)}
+    .btn:active{transform:translateY(1px)}
+    .btn.primary{background:linear-gradient(135deg,#2a63ff,#00c2ff);border:none}
+    .btn.ghost{background:transparent}
+    .btn.danger{background:rgba(255,92,122,.14);border-color:rgba(255,92,122,.35)}
+    .btn.small{padding:8px 10px;font-size:12px;border-radius:10px}
+    .badge{display:inline-block;font-size:11px;padding:3px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.14);color:var(--muted)}
+    .good{color:var(--good)} .bad{color:var(--bad)} .warn{color:var(--warn)} .blue{color:var(--blue)}
+    .muted{color:var(--muted)}
+    .small{font-size:12px}
+    .scenarioBox{background:rgba(15,23,48,.6);border:1px solid rgba(255,255,255,.10);border-radius:14px;padding:12px;line-height:1.45}
+    .choices{display:grid;gap:10px;margin-top:10px}
+    .choice{
+      text-align:left; width:100%;
+      padding:12px 12px;border-radius:14px;
+      background:var(--card2);border:1px solid rgba(255,255,255,.12);
+      cursor:pointer; color:var(--text)
+    }
+    .choice:hover{filter:brightness(1.08)}
+    .choice.selected{outline:2px solid rgba(0,194,255,.65)}
+    .choice.correct{border-color:rgba(46,204,113,.7); background:rgba(46,204,113,.10)}
+    .choice.wrong{border-color:rgba(255,92,122,.7); background:rgba(255,92,122,.10)}
+    input[type="text"], textarea, select{
+      width:100%;padding:10px 12px;border-radius:12px;
+      border:1px solid rgba(255,255,255,.12);background:var(--card2);color:var(--text)
+    }
+    textarea{min-height:90px;resize:vertical}
+    .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    @media (max-width:700px){.two{grid-template-columns:1fr}}
+    .kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+    .kpi .box{border-radius:14px;padding:10px;border:1px solid rgba(255,255,255,.10);background:rgba(15,23,48,.6)}
+    .kpi .n{font-size:18px;font-weight:900}
+    .kpi .l{font-size:12px;color:var(--muted)}
+    .log{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:#cfe0ff;white-space:pre-wrap;line-height:1.45;max-height:220px;overflow:auto}
+    details summary{cursor:pointer;color:#cfe0ff}
+  </style>
+</head>
+
+<body>
+<header>
+  <h1>🚑 TLSM Trauma Bay OSCE Game</h1>
+  <div class="sub">C-ABCDE stages + AT-MIST handover + Trauma team roles + Secondary survey (AMPLE + head-to-toe) with branching outcomes. GitHub Pages compatible.</div>
+</header>
+
+<main>
+  <div class="grid">
+
+    <!-- PLAY AREA -->
+    <section class="card">
+      <div class="row">
+        <span class="pill"><b>Role:</b> <span id="roleName">Leader</span></span>
+        <span class="pill"><b>Phase:</b> <span id="phaseName">Briefing</span></span>
+        <span class="pill"><b>Patient Status:</b> <span id="statusName">Unstable</span></span>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="scenarioBox" id="scenarioBox"></div>
+
+      <div class="hr"></div>
+
+      <div id="panel"></div>
+
+      <div class="hr"></div>
+
+      <div class="row">
+        <button class="btn ghost" id="btnBack">⬅ Back</button>
+        <button class="btn" id="btnHint">💡 Hint</button>
+        <button class="btn primary" id="btnCheck">✅ Check</button>
+        <button class="btn primary" id="btnNext" style="display:none">➡ Next</button>
+        <button class="btn danger" id="btnReset">↻ Reset</button>
+      </div>
+
+      <div id="feedback" style="margin-top:10px"></div>
+
+      <details style="margin-top:10px">
+        <summary>Show TLSM flow map</summary>
+        <div class="small muted" style="margin-top:8px;line-height:1.6">
+          <div><span class="badge">Activation</span> Team activation + roles + resources</div>
+          <div><span class="badge">Preparation</span> Equipment / Drugs / Staff / PPE</div>
+          <div><span class="badge">Handover</span> AT-MIST (structured)</div>
+          <div><span class="badge">Primary Survey</span> <b>C-ABCDE</b></div>
+          <div><span class="badge">Adjuncts</span> eFAST, CXR, pelvis X-ray, bloods/ABG/ECG as indicated</div>
+          <div><span class="badge">Secondary</span> AMPLE + head-to-toe exam</div>
+          <div><span class="badge">Disposition</span> ICU/OT/ward/transfer + documentation + debrief</div>
+        </div>
+      </details>
+    </section>
+
+    <!-- SIDEBAR -->
+    <aside class="card">
+      <div class="cardTitle">🎯 Scoreboard</div>
+      <div class="muted small">OSCE-style: prioritisation matters. Wrong choices can worsen patient status.</div>
+
+      <div class="kpi">
+        <div class="box"><div class="n" id="kScore">0</div><div class="l">Score</div></div>
+        <div class="box"><div class="n" id="kSafety">0</div><div class="l">Safety points</div></div>
+        <div class="box"><div class="n" id="kProgress">0/0</div><div class="l">Progress</div></div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="cardTitle">👥 Trauma Team Roles</div>
+      <div class="two">
+        <button class="btn small" onclick="setRole('Leader')">Leader</button>
+        <button class="btn small" onclick="setRole('Airway Nurse')">Airway Nurse</button>
+        <button class="btn small" onclick="setRole('Circulation Nurse')">Circulation Nurse</button>
+        <button class="btn small" onclick="setRole('Scribe')">Scribe</button>
+      </div>
+      <div class="muted small" style="margin-top:8px">
+        Role changes the <b>best</b> tasks you should prioritise (still within TLSM order).
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="cardTitle">🧾 Action Log</div>
+      <div class="log" id="log"></div>
+    </aside>
+
+  </div>
+</main>
+
+<script>
+/* -----------------------------
+   OSCE-STYLE BRANCHING STATE
+------------------------------ */
+const state = {
+  role: "Leader",
+  phaseIndex: 0,
+  selected: new Set(),
+  checked: false,
+  score: 0,
+  safety: 0,
+  // patient dynamics
+  status: "Unstable",          // Stable / Unstable / Crashing
+  bleedingControlled: false,
+  airwaySecured: false,
+  breathingTreated: false,
+  circulationSupported: false,
+  neuroChecked: false,
+  warmed: false,
+  adjunctDone: false,
+  secondaryDone: false,
+  atmistScore: 0,
+  log: []
+};
+
+const el = {
+  roleName: document.getElementById("roleName"),
+  phaseName: document.getElementById("phaseName"),
+  statusName: document.getElementById("statusName"),
+  scenarioBox: document.getElementById("scenarioBox"),
+  panel: document.getElementById("panel"),
+  feedback: document.getElementById("feedback"),
+  btnBack: document.getElementById("btnBack"),
+  btnHint: document.getElementById("btnHint"),
+  btnCheck: document.getElementById("btnCheck"),
+  btnNext: document.getElementById("btnNext"),
+  btnReset: document.getElementById("btnReset"),
+  kScore: document.getElementById("kScore"),
+  kSafety: document.getElementById("kSafety"),
+  kProgress: document.getElementById("kProgress"),
+  log: document.getElementById("log")
+};
+
+/* -----------------------------
+   PHASES (TLSM FLOW)
+   Each phase can be: "mcq" or "form"
+------------------------------ */
+const phases = [
+  {
+    id:"brief",
+    name:"Briefing & Activation",
+    type:"mcq",
+    multi:true,
+    promptTitle:"Prehospital call received",
+    prompt:`High-speed MVC. Patient pale, restless, heavy thigh bleeding reported. ETA 3 minutes.`,
+    question:`As the team receives the call, select the BEST actions (TLSM activation).`,
+    hint:`Activate trauma team + assign roles + prepare equipment/drugs/PPE before arrival.`,
+    choices: [
+      {text:"Activate trauma team and allocate roles (Leader/Airway/Circulation/Scribe).", ok:true,
+       why:"Role allocation reduces delays and supports safe workflow.", effect:{score:+15,safety:+1}},
+      {text:"Prepare trauma bay (airway kit/suction/O2/monitor/warming/IV/IO).", ok:true,
+       why:"Preparation enables rapid C-ABCDE actions on arrival.", effect:{score:+10}},
+      {text:"Wait until patient arrives to decide if trauma activation is needed.", ok:false,
+       why:"Delays lifesaving preparation.", effect:{score:-10, worsen:true}},
+      {text:"Ask runner to alert ED/OT/ICU/blood bank as per local escalation.", ok:true,
+       why:"Early coordination improves access to resources and definitive care.", effect:{score:+10}},
+      {text:"Send patient directly to CT to save time.", ok:false,
+       why:"Unstable trauma requires primary survey/resuscitation before CT.", effect:{score:-10, worsen:true}}
+    ],
+    roleFocus: {
+      "Leader":"Pick activation + roles + escalation.",
+      "Airway Nurse":"Prioritise airway equipment/suction/O2/RSI readiness.",
+      "Circulation Nurse":"Prioritise IV/IO setup, blood products readiness, warming.",
+      "Scribe":"Prepare documentation, trauma charting, time stamping."
+    }
+  },
+
+  {
+    id:"handover",
+    name:"Handover AT-MIST",
+    type:"form",
+    promptTitle:"Ambulance handover",
+    prompt:`Ambulance arrives. You must receive handover using AT-MIST.`,
+    hint:`AT-MIST = Age/Attendance, Time, Mechanism, Injuries, Signs/Symptoms, Treatment.`,
+    form: {
+      fields: [
+        {key:"A", label:"A — Age/Attendance", placeholder:"e.g., Male 35"},
+        {key:"T1",label:"T — Time of injury", placeholder:"e.g., 20 minutes ago"},
+        {key:"M", label:"M — Mechanism", placeholder:"e.g., High-speed MVC, unrestrained"},
+        {key:"I", label:"I — Injuries sustained", placeholder:"e.g., thigh bleed, possible chest injury"},
+        {key:"S", label:"S — Signs/Symptoms", placeholder:"e.g., BP 80/50 HR 130 RR 32 GCS 12"},
+        {key:"T2",label:"T — Treatment given", placeholder:"e.g., O2, pressure dressing, IV attempt"}
+      ],
+      rubric: [
+        {key:"A", points:2},
+        {key:"T1",points:2},
+        {key:"M", points:2},
+        {key:"I", points:2},
+        {key:"S", points:2},
+        {key:"T2",points:2}
+      ]
+    }
+  },
+
+  /* PRIMARY SURVEY C-ABCDE */
+  {
+    id:"C",
+    name:"Primary Survey — C (Catastrophic haemorrhage)",
+    type:"mcq",
+    multi:false,
+    promptTitle:"On arrival",
+    prompt:`Bright red thigh bleeding continues. Patient pale and sweaty. BP 80/50.`,
+    question:`What is your NEXT best action (C in C-ABCDE)?`,
+    hint:`Catastrophic bleeding comes BEFORE airway.`,
+    choices:[
+      {text:"Apply direct pressure / haemostatic dressing; apply tourniquet if uncontrolled.", ok:true,
+       why:"Catastrophic haemorrhage kills fast; control immediately.", effect:{score:+20,safety:+1, set:"bleedingControlled"}},
+      {text:"Start ECG and troponin now.", ok:false,
+       why:"ECG is an adjunct when indicated; do not delay bleeding control.", effect:{score:-12, worsen:true}},
+      {text:"Proceed to head-to-toe exam to look for other injuries first.", ok:false,
+       why:"Secondary survey is later; do not delay lifesaving actions.", effect:{score:-12, worsen:true}}
+    ],
+    roleFocus:{
+      "Leader":"Give clear command: 'Control bleed now' + assign tasks.",
+      "Airway Nurse":"Prepare suction/O2 while C is being managed (but don't steal priority).",
+      "Circulation Nurse":"Prepare IV/IO + request blood while bleed controlled.",
+      "Scribe":"Document time of tourniquet/haemostatic dressing."
+    }
+  },
+
+  {
+    id:"A",
+    name:"Primary Survey — A (Airway + C-spine)",
+    type:"mcq",
+    multi:true,
+    promptTitle:"Airway",
+    prompt:`Patient groaning. Blood in mouth. Possible facial injury. C-spine not cleared.`,
+    question:`Select the BEST airway actions (A).`,
+    hint:`Suction + jaw thrust + O2 + prepare definitive airway + protect C-spine.`,
+    choices:[
+      {text:"Suction blood/secretions and use jaw thrust with C-spine precautions.", ok:true,
+       why:"Clearing airway and safe manoeuvres prevent obstruction; protect C-spine.", effect:{score:+12, set:"airwaySecured"}},
+      {text:"Give high-flow oxygen and prepare RSI/intubation if airway is threatened.", ok:true,
+       why:"Oxygenation and readiness for definitive airway if needed.", effect:{score:+10}},
+      {text:"Delay airway until after secondary survey.", ok:false,
+       why:"Airway threats are immediate.", effect:{score:-10, worsen:true}},
+      {text:"Sit everyone to discuss diagnosis before touching the patient.", ok:false,
+       why:"Unstable trauma needs action now.", effect:{score:-8, worsen:true}}
+    ],
+    roleFocus:{
+      "Leader":"Assign airway lead + maintain closed-loop communication.",
+      "Airway Nurse":"This is your main station: suction, O2, airway adjuncts, RSI readiness.",
+      "Circulation Nurse":"Support with monitoring/IV while airway managed.",
+      "Scribe":"Record airway assessment, device used, O2 delivery, times."
+    }
+  },
+
+  {
+    id:"B",
+    name:"Primary Survey — B (Breathing)",
+    type:"mcq",
+    multi:false,
+    promptTitle:"Breathing",
+    prompt:`RR 34. Asymmetrical chest rise. Decreased breath sounds on left. SpO₂ 88% on room air.`,
+    question:`Best next action (B)?`,
+    hint:`Treat life-threatening chest problem clinically; do not wait for imaging if unstable.`,
+    choices:[
+      {text:"Give O2 and treat suspected life-threatening chest issue immediately (e.g., decompress if tension suspected).", ok:true,
+       why:"Life-threatening breathing problems require immediate treatment in unstable patients.", effect:{score:+20,safety:+1, set:"breathingTreated"}},
+      {text:"Send for CT chest to confirm before doing anything.", ok:false,
+       why:"CT delays treatment; patient may deteriorate.", effect:{score:-12, worsen:true}},
+      {text:"Wait for blood results before deciding.", ok:false,
+       why:"Breathing issues can worsen quickly.", effect:{score:-12, worsen:true}}
+    ],
+    roleFocus:{
+      "Leader":"Keep sequence moving; confirm B is addressed.",
+      "Airway Nurse":"Coordinate oxygen/ventilation and assist with chest interventions.",
+      "Circulation Nurse":"Monitor vitals, anticipate deterioration, prepare for fluids/blood.",
+      "Scribe":"Document respiratory findings and intervention time."
+    }
+  },
+
+  {
+    id:"C2",
+    name:"Primary Survey — C (Circulation)",
+    type:"mcq",
+    multi:true,
+    promptTitle:"Circulation",
+    prompt:`BP 82/48 HR 132. Cool clammy. Bleeding now controlled.`,
+    question:`Select BEST circulation actions.`,
+    hint:`Access + balanced resuscitation per protocol + bloods/crossmatch + reassess.`,
+    choices:[
+      {text:"Establish large-bore IV x2 (or IO if needed) and start resuscitation as per protocol.", ok:true,
+       why:"Rapid access enables blood/fluids/meds; IO if IV fails.", effect:{score:+12, set:"circulationSupported"}},
+      {text:"Send bloods & crossmatch (FBC, coag/INR, VBG/ABG as indicated).", ok:true,
+       why:"Supports resuscitation decisions and haemorrhage management.", effect:{score:+10}},
+      {text:"Give large volumes of crystalloid regardless of bleeding.", ok:false,
+       why:"Excess crystalloids can worsen coagulopathy/hypothermia; follow balanced approach.", effect:{score:-10, worsen:true}},
+      {text:"Reassess C-ABCDE after interventions.", ok:true,
+       why:"TLSM is iterative; reassessment is essential.", effect:{score:+8}}
+    ],
+    roleFocus:{
+      "Leader":"Direct resources: blood, IV/IO, reassessment points.",
+      "Airway Nurse":"Assist with monitoring and ventilatory support.",
+      "Circulation Nurse":"This is your main station: IV/IO, bloods, warming, transfusion readiness.",
+      "Scribe":"Record times: IV/IO, bloods sent, fluids/blood started."
+    }
+  },
+
+  {
+    id:"D",
+    name:"Primary Survey — D (Disability)",
+    type:"mcq",
+    multi:false,
+    promptTitle:"Disability",
+    prompt:`Patient responds to pain, confused. Pupils equal. You need a quick neuro check.`,
+    question:`Best Disability assessment set?`,
+    hint:`GCS/AVPU + pupils + glucose.`,
+    choices:[
+      {text:"GCS/AVPU + pupils + bedside glucose check.", ok:true,
+       why:"Rapid neuro assessment + reversible cause (hypoglycaemia).", effect:{score:+18,safety:+1, set:"neuroChecked"}},
+      {text:"Full cranial nerve exam and long neuro assessment now.", ok:false,
+       why:"Too detailed for primary survey.", effect:{score:-8}},
+      {text:"Ignore neuro until CT is done.", ok:false,
+       why:"Need baseline and to detect deterioration early.", effect:{score:-10, worsen:true}}
+    ],
+    roleFocus:{
+      "Leader":"Confirm disability done and document baseline.",
+      "Airway Nurse":"Maintain oxygenation—hypoxia worsens neuro status.",
+      "Circulation Nurse":"Support perfusion and glucose check.",
+      "Scribe":"Record GCS, pupils, glucose, time."
+    }
+  },
+
+  {
+    id:"E",
+    name:"Primary Survey — E (Exposure + Environment)",
+    type:"mcq",
+    multi:true,
+    promptTitle:"Exposure",
+    prompt:`You must check for hidden injuries but prevent hypothermia.`,
+    question:`Select BEST Exposure/Environment actions.`,
+    hint:`Expose as needed, then warm; re-check C-ABCDE.`,
+    choices:[
+      {text:"Expose adequately to examine, then actively warm (blankets/warm fluids/warmer).", ok:true,
+       why:"Exposure finds injuries; warming prevents hypothermia/coagulopathy.", effect:{score:+12, set:"warmed"}},
+      {text:"Leave wet clothes on to avoid embarrassment.", ok:false,
+       why:"Wet clothes worsen hypothermia; exposure is clinically necessary.", effect:{score:-10, worsen:true}},
+      {text:"Reassess C-ABCDE after interventions or deterioration.", ok:true,
+       why:"Primary survey is iterative.", effect:{score:+8}},
+      {text:"Stop all care to complete paperwork now.", ok:false,
+       why:"Documentation is important, but not at the expense of lifesaving care.", effect:{score:-8}}
+    ],
+    roleFocus:{
+      "Leader":"Maintain flow: expose, warm, reassess.",
+      "Airway Nurse":"Prevent hypoxia/hypothermia; maintain monitoring.",
+      "Circulation Nurse":"Warming is part of circulation and shock prevention.",
+      "Scribe":"Record exposure findings and warming measures."
+    }
+  },
+
+  /* ADJUNCTS */
+  {
+    id:"adjuncts",
+    name:"Adjuncts to Primary Survey",
+    type:"mcq",
+    multi:true,
+    promptTitle:"Adjuncts",
+    prompt:`Patient now improving but still high risk. You can perform adjuncts without delaying lifesaving care.`,
+    question:`Select appropriate adjuncts (as indicated).`,
+    hint:`eFAST + selected X-rays + targeted tests (ABG/VBG, ECG if indicated).`,
+    choices:[
+      {text:"Perform eFAST to screen for free fluid/pneumothorax.", ok:true,
+       why:"Rapid bedside adjunct supporting decisions.", effect:{score:+10, set:"adjunctDone"}},
+      {text:"Portable CXR/pelvis X-ray if indicated and not delaying care.", ok:true,
+       why:"Quick imaging adjunct depending on suspected injuries/stability.", effect:{score:+8}},
+      {text:"Do nothing until tertiary survey only.", ok:false,
+       why:"Adjuncts can guide early management.", effect:{score:-6}},
+      {text:"ECG/troponin only if indicated (chest pain, arrhythmia, cardiac concerns).", ok:true,
+       why:"Not for all trauma; use when clinically indicated.", effect:{score:+6}}
+    ],
+    roleFocus:{
+      "Leader":"Decide what adjuncts are appropriate based on stability.",
+      "Airway Nurse":"Keep monitoring/oxygen during imaging/FAST.",
+      "Circulation Nurse":"Ensure IV access secured for transport/imaging.",
+      "Scribe":"Document adjuncts performed + results/time."
+    }
+  },
+
+  /* SECONDARY SURVEY */
+  {
+    id:"secondary",
+    name:"Secondary Survey — AMPLE + Head-to-Toe",
+    type:"mcq",
+    multi:true,
+    promptTitle:"Secondary Survey",
+    prompt:`Primary survey addressed. You proceed to secondary survey (if stable enough).`,
+    question:`Select the components that belong to secondary survey.`,
+    hint:`AMPLE history + head-to-toe exam + pain assessment + review interventions.`,
+    choices:[
+      {text:"AMPLE history (Allergies, Meds, Past history, Last meal, Events).", ok:true,
+       why:"Standard structured history in secondary survey.", effect:{score:+10, set:"secondaryDone"}},
+      {text:"Head-to-toe exam: head/face/neck/chest/abdomen/pelvis/limbs/back.", ok:true,
+       why:"Systematic exam to find additional injuries.", effect:{score:+10}},
+      {text:"Repeat C-ABCDE only and never do head-to-toe.", ok:false,
+       why:"Secondary survey is needed once primary threats addressed.", effect:{score:-6}},
+      {text:"Pain assessment and appropriate analgesia plan (without masking deterioration).", ok:true,
+       why:"Comfort + function + ongoing monitoring.", effect:{score:+6}}
+    ],
+    roleFocus:{
+      "Leader":"Lead systematic exam and summarise findings.",
+      "Airway Nurse":"Monitor airway/breathing during secondary survey.",
+      "Circulation Nurse":"Recheck perfusion, bleeding sites, lines, urine output if applicable.",
+      "Scribe":"Document AMPLE + head-to-toe findings."
+    }
+  },
+
+  /* DISPOSITION */
+  {
+    id:"disposition",
+    name:"Disposition & Transfer",
+    type:"mcq",
+    multi:true,
+    promptTitle:"Disposition",
+    prompt:`Patient needs definitive care pathway (OT/ICU/ward/transfer).`,
+    question:`Select safe transfer/disposition actions.`,
+    hint:`Secure lines/airway + monitoring + documentation + communicate.`,
+    choices:[
+      {text:"Secure airway/lines, ensure monitoring, and recheck stability before moving.", ok:true,
+       why:"Transfer is a high-risk moment; preparation prevents deterioration.", effect:{score:+10,safety:+1}},
+      {text:"Complete essential documentation and structured handover to receiving team.", ok:true,
+       why:"Continuity of care and safety depend on good handover/documentation.", effect:{score:+10}},
+      {text:"Move immediately without monitor/oxygen to save time.", ok:false,
+       why:"Unsafe transfer increases risk of deterioration.", effect:{score:-12, worsen:true}},
+      {text:"Debrief team: what went well + improvements (non-blaming).", ok:true,
+       why:"Debrief improves future performance and safety culture.", effect:{score:+6}}
+    ],
+    roleFocus:{
+      "Leader":"Decide destination and lead handover.",
+      "Airway Nurse":"Ensure airway/oxygen/ventilation safe for transfer.",
+      "Circulation Nurse":"Ensure IV/blood/fluids safe for transfer, recheck vitals.",
+      "Scribe":"Ensure documentation complete and accompany transfer notes."
+    }
+  },
+
+  /* FINISH */
+  { id:"finish", name:"Finish", type:"finish" }
+];
+
+/* -----------------------------
+   RENDER
+------------------------------ */
+function setRole(role){
+  state.role = role;
+  log(`Role set: ${role}`);
+  render();
+}
+window.setRole = setRole;
+
+function scenarioText(){
+  const keyFindings = [];
+  if (!state.bleedingControlled) keyFindings.push("⚠️ Major thigh bleed ongoing");
+  if (!state.airwaySecured) keyFindings.push("⚠️ Airway at risk (blood in mouth)");
+  if (!state.breathingTreated) keyFindings.push("⚠️ Breathing compromised (SpO₂ low)");
+  if (!state.circulationSupported) keyFindings.push("⚠️ Shock signs (BP low, HR high)");
+  if (!state.neuroChecked) keyFindings.push("⚠️ Neuro baseline not documented");
+  if (!state.warmed) keyFindings.push("⚠️ Hypothermia risk");
+  const done = [];
+  if (state.bleedingControlled) done.push("✅ Bleeding controlled");
+  if (state.airwaySecured) done.push("✅ Airway actions done");
+  if (state.breathingTreated) done.push("✅ Breathing treated");
+  if (state.circulationSupported) done.push("✅ Circulation supported");
+  if (state.neuroChecked) done.push("✅ Disability assessed");
+  if (state.warmed) done.push("✅ Warming started");
+  if (state.adjunctDone) done.push("✅ Adjuncts performed");
+  if (state.secondaryDone) done.push("✅ Secondary survey completed");
+
+  const statusLine = state.status === "Stable"
+    ? `<span class="good"><b>Stable</b></span>`
+    : (state.status === "Crashing"
+      ? `<span class="bad"><b>Crashing</b></span>`
+      : `<span class="warn"><b>Unstable</b></span>`);
+
+  return `
+    <div><b>Case:</b> 35-year-old male, high-speed MVC, pale/restless, thigh bleed, possible chest injury.</div>
+    <div style="margin-top:6px"><b>Current status:</b> ${statusLine}</div>
+    <div style="margin-top:8px">
+      <div class="small muted"><b>Risks / missing priorities:</b> ${keyFindings.length? keyFindings.join(" • ") : "None"}</div>
+      <div class="small muted" style="margin-top:6px"><b>Completed:</b> ${done.length? done.join(" • ") : "—"}</div>
+    </div>
+  `;
+}
+
+function render(){
+  const phase = phases[state.phaseIndex];
+
+  el.roleName.textContent = state.role;
+  el.phaseName.textContent = phase.name;
+  el.statusName.textContent = state.status;
+  el.scenarioBox.innerHTML = scenarioText();
+
+  el.kScore.textContent = state.score;
+  el.kSafety.textContent = state.safety;
+  el.kProgress.textContent = `${Math.min(state.phaseIndex+1, phases.length)}/${phases.length}`;
+
+  el.btnBack.disabled = state.phaseIndex === 0;
+  el.feedback.innerHTML = "";
+  state.selected = new Set();
+  state.checked = false;
+  el.btnNext.style.display = "none";
+  el.btnCheck.style.display = (phase.type === "finish") ? "none" : "inline-block";
+
+  if(phase.type === "mcq"){
+    renderMCQ(phase);
+  } else if(phase.type === "form"){
+    renderATMIST(phase);
+  } else {
+    renderFinish();
+  }
+
+  // role focus
+  if(phase.roleFocus && phase.roleFocus[state.role]){
+    const msg = phase.roleFocus[state.role];
+    el.feedback.innerHTML = `<div class="small muted"><span class="blue"><b>Role focus:</b></span> ${msg}</div>`;
+  }
+
+  updateLog();
+}
+
+function renderMCQ(phase){
+  const title = `<div class="cardTitle">${phase.promptTitle}</div>`;
+  const p = `<div class="muted">${phase.prompt}</div>`;
+  const q = `<div style="margin-top:10px;font-weight:800">${phase.question}</div>
+             <div class="small muted" style="margin-top:4px">${phase.multi ? "Select all that apply." : "Select one option."}</div>`;
+  const choiceHtml = phase.choices.map((c,i)=> `
+    <button class="choice" data-i="${i}">
+      <div style="font-weight:750">${c.text}</div>
+    </button>
+  `).join("");
+
+  el.panel.innerHTML = `${title}${p}${q}<div class="choices" id="choices">${choiceHtml}</div>`;
+
+  const choiceButtons = [...document.querySelectorAll(".choice")];
+  choiceButtons.forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      if(state.checked) return;
+      const i = Number(btn.getAttribute("data-i"));
+      if(phase.multi){
+        if(state.selected.has(i)) state.selected.delete(i);
+        else state.selected.add(i);
+      } else {
+        state.selected = new Set([i]);
+      }
+      choiceButtons.forEach(b=>{
+        const j = Number(b.getAttribute("data-i"));
+        b.classList.toggle("selected", state.selected.has(j));
+      });
+    });
+  });
+}
+
+function renderATMIST(phase){
+  const title = `<div class="cardTitle">${phase.promptTitle}</div>`;
+  const p = `<div class="muted">${phase.prompt}</div>`;
+  const note = `<div class="small muted" style="margin-top:10px">
+      Fill AT-MIST. You get points for completing each section clearly.
+    </div>`;
+
+  const fields = phase.form.fields.map(f=>`
+    <div style="margin-top:10px">
+      <div class="small muted" style="margin-bottom:6px"><b>${f.label}</b></div>
+      <input type="text" id="f_${f.key}" placeholder="${f.placeholder}">
+    </div>
+  `).join("");
+
+  el.panel.innerHTML = `${title}${p}${note}<div class="hr"></div>${fields}
+    <div class="hr"></div>
+    <button class="btn" id="btnCopy">Copy AT-MIST</button>
+    <div class="small muted" id="copyMsg" style="margin-top:8px"></div>
+  `;
+
+  document.getElementById("btnCopy").addEventListener("click", ()=>{
+    const data = {};
+    phase.form.fields.forEach(f=> data[f.key] = (document.getElementById("f_"+f.key).value || "").trim());
+
+    const text =
+`AT-MIST Handover
+A: ${data.A}
+T (time): ${data.T1}
+M: ${data.M}
+I: ${data.I}
+S: ${data.S}
+T (treatment): ${data.T2}`;
+
+    navigator.clipboard.writeText(text).then(()=>{
+      document.getElementById("copyMsg").textContent = "Copied ✅ Paste into OSCE notes.";
+    }).catch(()=>{
+      document.getElementById("copyMsg").textContent = "Copy blocked by browser. Select and copy manually.";
+    });
+  });
+}
+
+function renderFinish(){
+  const safe = (state.status === "Stable") ? "✅ Patient stabilised" : (state.status === "Unstable" ? "⚠️ Still unstable" : "❌ Crashed");
+  const at = state.atmistScore;
+  el.panel.innerHTML = `
+    <div class="cardTitle">🎉 Finished</div>
+    <div class="muted" style="line-height:1.6">
+      <div><b>Outcome:</b> ${safe}</div>
+      <div><b>Score:</b> ${state.score}</div>
+      <div><b>Safety points:</b> ${state.safety}</div>
+      <div><b>AT-MIST completeness score:</b> ${at} / 12</div>
+      <div style="margin-top:10px">
+        <b>OSCE tip:</b> Say out loud: “I will proceed with <b>C-ABCDE</b> and reassess after each intervention.”
+      </div>
+    </div>
+  `;
+}
+
+/* -----------------------------
+   CHECKING + BRANCHING
+------------------------------ */
+function worsenPatient(){
+  // If repeated unsafe actions, patient can crash.
+  if(state.status === "Stable") state.status = "Unstable";
+  else if(state.status === "Unstable") state.status = "Crashing";
+  else state.status = "Crashing";
+}
+
+function improvePatient(){
+  // Improve when key priorities are met
+  const coreOk = state.bleedingControlled && state.breathingTreated && state.circulationSupported;
+  if(coreOk) state.status = "Stable";
+  else if(state.bleedingControlled && state.airwaySecured) state.status = "Unstable";
+}
+
+function applyEffect(effect){
+  if(!effect) return;
+
+  if(effect.score) state.score = Math.max(0, state.score + effect.score);
+  if(effect.safety) state.safety = Math.max(0, state.safety + effect.safety);
+
+  if(effect.set){
+    if(effect.set === "bleedingControlled") state.bleedingControlled = true;
+    if(effect.set === "airwaySecured") state.airwaySecured = true;
+    if(effect.set === "breathingTreated") state.breathingTreated = true;
+    if(effect.set === "circulationSupported") state.circulationSupported = true;
+    if(effect.set === "neuroChecked") state.neuroChecked = true;
+    if(effect.set === "warmed") state.warmed = true;
+    if(effect.set === "adjunctDone") state.adjunctDone = true;
+    if(effect.set === "secondaryDone") state.secondaryDone = true;
+  }
+  if(effect.worsen) worsenPatient();
+}
+
+function check(){
+  const phase = phases[state.phaseIndex];
+
+  if(phase.type === "mcq"){
+    if(state.selected.size === 0){
+      el.feedback.innerHTML = `<div class="small muted"><span class="warn"><b>Select an option first.</b></span></div>`;
+      return;
+    }
+
+    state.checked = true;
+
+    const okSet = new Set(phase.choices.map((c,i)=>c.ok?i:null).filter(x=>x!==null));
+    let correct=0, wrong=0, missed=0;
+
+    state.selected.forEach(i => okSet.has(i) ? correct++ : wrong++);
+    okSet.forEach(i => { if(!state.selected.has(i)) missed++; });
+
+    // OSCE-style scoring
+    let delta = 0;
+    if(phase.multi){
+      delta += correct * 10;
+      delta -= wrong * 10;
+      delta -= missed * 3;
+    } else {
+      const pick = [...state.selected][0];
+      delta += (phase.choices[pick].ok) ? 20 : -10;
+    }
+    state.score = Math.max(0, state.score + delta);
+
+    // Effects + visuals + rationales
+    const btns = [...document.querySelectorAll(".choice")];
+    btns.forEach(b=>{
+      const i = Number(b.getAttribute("data-i"));
+      const chosen = state.selected.has(i);
+      const ok = phase.choices[i].ok;
+      b.disabled = true;
+      if(chosen) b.classList.add(ok ? "correct" : "wrong");
+      if(!chosen && ok) b.style.borderColor = "rgba(46,204,113,.35)";
+    });
+
+    // Apply effects only for selected choices (and small penalty for missing critical in C-ABCDE)
+    state.selected.forEach(i => applyEffect(phase.choices[i].effect));
+
+    // Critical-miss logic (branching): if in C/A/B/C2 and they miss correct essentials, worsen.
+    const criticalPhases = new Set(["C","A","B","C2"]);
+    if(criticalPhases.has(phase.id)){
+      const perfect = (wrong===0 && missed===0);
+      if(perfect) state.safety = Math.max(0, state.safety + 1);
+      else worsenPatient();
+    }
+
+    // Improve after key steps
+    improvePatient();
+
+    // Rationale block
+    let rationale = `<div class="small muted" style="margin-top:8px"><b>Rationales:</b></div><ul class="small" style="margin:8px 0 0;line-height:1.6;color:#dbe7ff">`;
+    phase.choices.forEach((c,i)=>{
+      if(state.selected.has(i) || c.ok){
+        const tag = c.ok ? `<span class="good">✔</span>` : `<span class="bad">✘</span>`;
+        rationale += `<li>${tag} ${c.why}</li>`;
+      }
+    });
+    rationale += `</ul>`;
+
+    const verdict = (wrong===0 && missed===0) ? `<div class="good" style="font-weight:900">Correct ✅</div>` : `<div class="warn" style="font-weight:900">Review ⚠️</div>`;
+    const summary = `<div class="small muted">Picked: <b>${state.selected.size}</b> • Correct: <b>${correct}</b> • Wrong: <b>${wrong}</b> • Missed: <b>${missed}</b> • Score change: <b>${delta}</b></div>`;
+    el.feedback.innerHTML = `${verdict}${summary}${rationale}`;
+
+    log(`${phase.name}: Δscore ${delta} | status=${state.status}`);
+    el.btnCheck.style.display = "none";
+    el.btnNext.style.display = "inline-block";
+    updateKPIs();
+    return;
+  }
+
+  if(phase.type === "form"){
+    // Score AT-MIST completeness
+    let points = 0;
+    const data = {};
+    phase.form.fields.forEach(f=>{
+      data[f.key] = (document.getElementById("f_"+f.key).value || "").trim();
+    });
+    phase.form.rubric.forEach(r=>{
+      const val = (data[r.key] || "");
+      if(val.length >= 4) points += r.points;
+    });
+    state.atmistScore = points;
+
+    // Score and safety: structured handover improves outcomes
+    state.score = Math.max(0, state.score + (points>=8 ? 15 : 6));
+    if(points>=10) state.safety = Math.max(0, state.safety + 1);
+
+    // If very poor handover, worsen slightly (branching)
+    if(points <= 4) worsenPatient();
+
+    el.feedback.innerHTML = `
+      <div style="font-weight:900" class="${points>=8 ? "good" : "warn"}">AT-MIST scored: ${points}/12</div>
+      <div class="small muted" style="margin-top:6px">
+        ${points>=8 ? "Good structured handover supports safe prioritisation." : "Improve handover clarity to reduce missed critical information."}
+      </div>
+    `;
+
+    log(`AT-MIST completed: ${points}/12 | status=${state.status}`);
+    el.btnNext.style.display = "inline-block";
+    updateKPIs();
+    el.btnCheck.style.display = "none";
+    return;
+  }
+}
+
+function next(){
+  if(state.phaseIndex < phases.length - 1){
+    state.phaseIndex++;
+    // If patient is crashing and we are still early, show warning
+    const phase = phases[state.phaseIndex];
+    if(state.status === "Crashing" && phase.type !== "finish"){
+      el.feedback.innerHTML = `<div class="bad" style="font-weight:900">Patient is crashing ❌</div>
+        <div class="small muted" style="margin-top:6px">In OSCE: call for help, escalate, and re-run C-ABCDE immediately.</div>`;
+    }
+    // finish guard
+    if(phase.id === "finish"){
+      render();
+      return;
+    }
+    render();
+    return;
+  }
+  render();
+}
+
+function back(){
+  if(state.phaseIndex > 0){
+    state.phaseIndex--;
+    render();
+  }
+}
+
+function reset(){
+  Object.assign(state, {
+    role:"Leader",
+    phaseIndex:0,
+    selected:new Set(),
+    checked:false,
+    score:0,
+    safety:0,
+    status:"Unstable",
+    bleedingControlled:false,
+    airwaySecured:false,
+    breathingTreated:false,
+    circulationSupported:false,
+    neuroChecked:false,
+    warmed:false,
+    adjunctDone:false,
+    secondaryDone:false,
+    atmistScore:0,
+    log:[]
+  });
+  render();
+  log("Game reset.");
+}
+
+function updateKPIs(){
+  el.kScore.textContent = state.score;
+  el.kSafety.textContent = state.safety;
+  el.kProgress.textContent = `${Math.min(state.phaseIndex+1, phases.length)}/${phases.length}`;
+  el.statusName.textContent = state.status;
+}
+
+function log(line){
+  const ts = new Date().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+  state.log.unshift(`[${ts}] ${line}`);
+  if(state.log.length > 50) state.log.pop();
+  updateLog();
+}
+function updateLog(){
+  el.log.textContent = state.log.join("\n");
+}
+
+function hint(){
+  const phase = phases[state.phaseIndex];
+  if(phase.hint) el.feedback.innerHTML = `<div class="small muted"><b>Hint:</b> ${phase.hint}</div>`;
+  else el.feedback.innerHTML = `<div class="small muted">No hint for this section.</div>`;
+}
+
+/* -----------------------------
+   EVENTS
+------------------------------ */
+el.btnCheck.addEventListener("click", check);
+el.btnNext.addEventListener("click", next);
+el.btnBack.addEventListener("click", back);
+el.btnReset.addEventListener("click", reset);
+el.btnHint.addEventListener("click", hint);
+
+/* -----------------------------
+   INIT
+------------------------------ */
+render();
+log("Game started.");
+</script>
+</body>
+</html>
